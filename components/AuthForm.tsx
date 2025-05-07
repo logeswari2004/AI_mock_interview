@@ -11,10 +11,9 @@ import { Form } from "@/components/ui/form"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { createUserWithEmailAndPassword } from "firebase/auth"
-import { auth } from "@/firebase/client"
-import { signUp } from "@/lib/actions/auth.action"
-// import { signUp } from "@/lib/actions/auth.action"
+import {createUserWithEmailAndPassword, signInWithEmailAndPassword} from "@firebase/auth";
+ import {auth} from "@/firebase/client";
+ import {signIn, signUp} from "@/lib/actions/auth.action";
 
 const authFormSchema = (type: FormType) => {
   return z.object({
@@ -43,29 +42,54 @@ const AuthForm = ({type}:{type:FormType}) => {
       if(type === 'sign-up'){
         const { name, email, password } = values;
 
-        const userCredentials = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredentials = await createUserWithEmailAndPassword(auth, email, password);
 
-        const result = await signUp({
-          uid: userCredentials.user.uid,
-          name: name!,
-          email,
-          password,
-        })
+    const result = await signUp({
+      uid: userCredentials.user.uid,
+      name: name!,
+      email,
+      password,
+    });
 
-        
+    if (!result?.success) {
+      toast.error(result?.message);
+      return;
+    }
 
-        toast.success('Account created successfully. Please sign in.');
-        router.push('/sign-in')
+    toast.success("Account created successfully. Please sign in.");
+    router.push("/sign-in");
         //console.log('SIGN UP', values);
       }else {
-        toast.success('Sign in successfully.');
+        const { email, password } = values;
+ 
+                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
+ 
+                 const idToken = await userCredential.user.getIdToken();
+ 
+                 if(!idToken) {
+                     toast.error('Sign in failed')
+                     return;
+                 }
+ 
+                 await signIn({
+                     email, idToken
+                 })
+        toast.success('Signed in successfully.');
         router.push('/')
       }
-    } catch (error) {
+    } catch (error: any) {
+      const code = error.code;
+    
+      if (code === "auth/email-already-in-use") {
+        toast.error("Email already in use. Please sign in instead.");
+        router.push("/sign-in");
+        return;
+      }
+    
+      const errorMessage = error?.message || "Something went wrong";
       console.log(error);
-      toast.error(`There was an error: ${error}`);
+      toast.error(`There was an error: ${errorMessage}`);
     }
-    //console.log(values)
   }
 
   const isSignIn = type === 'sign-in';
@@ -134,12 +158,9 @@ const AuthForm = ({type}:{type:FormType}) => {
     </>
   )}
 </p>
-
-
     </div>
     </div>
 
   )
 }
-
 export default AuthForm

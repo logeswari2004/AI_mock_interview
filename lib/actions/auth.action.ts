@@ -86,6 +86,8 @@
          sameSite: 'lax'
      })
  }
+
+ 
  export async function getCurrentUser(): Promise<User | null> {
     const cookieStore = await cookies();
 

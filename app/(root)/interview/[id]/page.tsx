@@ -21,7 +21,7 @@ const Page = async ({ params }: RouteParams) => {
              <Image src={getRandomInterviewCover()} alt="cover-image" width={40} height={40} className="rounded-full object-cover size-[40px]" />
                         <h3 className="capitalize">{interview.role} Interview</h3>
                     </div>
-                    
+
                     <DisplayTechIcons techStack={interview.techstack} />
                 </div>
 
@@ -29,8 +29,8 @@ const Page = async ({ params }: RouteParams) => {
             </div>
 
             <Agent
-                userName={user?.name}
-                type={user?.id}
+                userName={user?.name || ''}
+                userId={user?.id}
                 interviewId={id}
                 type="interview"
                 questions={interview.questions}
